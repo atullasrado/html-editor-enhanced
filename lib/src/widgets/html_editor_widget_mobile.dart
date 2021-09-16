@@ -105,12 +105,27 @@ class _HtmlEditorWidgetMobileState extends State<HtmlEditorWidget> {
                         summernoteCallbacks = summernoteCallbacks +
                             """
                           \nsummernoteAtMention: {
-                            getSuggestions: (value) => ${p.getMentions()},
+                            getSuggestions: async (value) => {
+                              return await window.flutter_inappwebview.callHandler('getSuggestionHandler', value);
+                            },
                             onSelect: (value) => {
                               window.flutter_inappwebview.callHandler('onSelectMention', value);
                             },
                           },
                         """;
+                        controllerMap[widget.controller].addJavaScriptHandler(
+                            handlerName: 'getSuggestionHandler',
+                            callback: (value) {
+                              var searchString = value.first.toString();
+                              var mentionsString = p.getMentions
+                                .call()
+                                .replaceAll('[', '')
+                                .replaceAll(']', '');
+                              var mentionsList = mentionsString.split(', ');
+                              return mentionsList
+                                .map((e) => e.substring(1, e.length - 1))
+                                .where((element) => element.contains(searchString)).toList();
+                            });
                         if (p.onSelect != null) {
                           controllerMap[widget.controller].addJavaScriptHandler(
                               handlerName: 'onSelectMention',
